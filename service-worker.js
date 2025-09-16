@@ -2,9 +2,11 @@ const CACHE_NAME = "neocal-v1";
 const URLS_TO_CACHE = [
     "./",
     "./index.html",
-    "./style.css",
-    "./script.js",
-    "./manifest.json"
+    "./css/style.css",
+    "./js/script.js",
+    "./manifest.json",
+    "./icons/icon-192.png",
+    "./icons/icon-512.png"
 ];
 
 // نصب Service Worker و کش فایل‌ها

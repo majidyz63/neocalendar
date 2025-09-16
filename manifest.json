@@ -1,6 +1,7 @@
 {
   "name": "NeoCalendar",
   "short_name": "NeoCal",
+  "id": "/index.html",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f1220",
