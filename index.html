@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NeoCalendar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0078d7">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/script.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <!-- Google Sign-In -->
+    <div id="g_id_onload" data-client_id="612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com"
+        data-scope="https://www.googleapis.com/auth/calendar.events" data-callback="handleCredentialResponse"></div>
+    <div class="g_id_signin" data-type="standard"></div>
+
+    <header>
+        <button id="prevMonth">◀</button>
+        <span id="monthYear"></span>
+        <button id="nextMonth">▶</button>
+        <button id="allEventsBtn">📋 All Events</button>
+        <select id="voiceLang">
+            <option value="fa-IR">🇮🇷 فارسی</option>
+            <option value="en-US" selected>🇬🇧 English</option>
+            <option value="nl-NL">🇳🇱 Nederlands</option>
+        </select>
+        <!-- <button id="voiceQuickBtn" class="btn-add">🎙️ Voice Quick Add</button> -->
+        <button id="voiceQuickBtn" class="btn-add">
+            <img src="microphone_emoji.png" alt="Mic">
+            Voice Quick Add
+        </button>
+
+        <button id="enableNotiBtn">🔔 Enable Notifications</button>
+    </header>
+
+    <div class="calendar" id="calendar"></div>
+    <footer>Made with ❤️ by Majid</footer>
+
+    <!-- Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Events</h3>
+            <div id="eventList"></div>
+            <button class="btn-add" id="addEventBtn">➕ Add Event</button>
+            <button class="btn-close" id="closeModal">Close</button>
+        </div>
+    </div>
+
+    <!-- All Events Modal -->
+    <div class="modal" id="allEventsModal">
+        <div class="modal-content">
+            <h3>All Events</h3>
+            <input type="text" id="searchInput" placeholder="Search events..."
+                style="width:100%;padding:6px;margin-bottom:8px;">
+            <div id="allEventsList"></div>
+            <button class="btn-add" id="exportBtn">⬇️ Export JSON</button>
+            <button class="btn-add" id="exportICSBtn">📅 Export ICS</button>
+            <input type="file" id="importFile" accept=".json">
+            <button class="btn-close" id="closeAllEvents">Close</button>
+        </div>
+    </div>
+
+    <!-- Stop Alarm -->
+    <div id="alarmControls" style="display:none;text-align:center;padding:10px;">
+        <button class="btn-stop" id="stopAlarm">🔇 Stop Alarm</button>
+    </div>
+
+    <audio id="alarmSound" loop>
+        <source src="sounds/alarm.wav" type="audio/wav">
+    </audio>
+</body>
+
+</html>
