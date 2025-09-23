@@ -388,3 +388,24 @@ document.addEventListener("DOMContentLoaded", () => {
     events.forEach(scheduleReminder);
     renderCalendar();
 });
+
+// === Google Login ===
+let accessToken = null;
+
+function initGoogleLogin() {
+    const client = google.accounts.oauth2.initTokenClient({
+        client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/calendar.events",
+        callback: (tokenResponse) => {
+            accessToken = tokenResponse.access_token;
+            console.log("✅ Access Token:", accessToken);
+            alert("Signed in with Google successfully!");
+        }
+    });
+
+    client.requestAccessToken();
+}
+
+document.getElementById("googleLoginBtn")
+    .addEventListener("click", initGoogleLogin);
+
