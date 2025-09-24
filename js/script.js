@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Global Variables ===
     let quickRecorder, quickChunks = [], quickRecording = false;
     let accessToken = null;
+    let tokenClient;
 
     const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
     const calendarEl = document.getElementById('calendar');
@@ -13,33 +14,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const alarmSound = document.getElementById('alarmSound');
     const stopAlarmBtn = document.getElementById('stopAlarm');
     const alarmControls = document.getElementById('alarmControls');
-    
+
     let currentDate = new Date();
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
 
     // === Google Login ===
-    window.handleCredentialResponse = function () {
-        google.accounts.oauth2.initTokenClient({
-            client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
-            scope: "https://www.googleapis.com/auth/calendar.events",
-            callback: (tokenResponse) => {
-                accessToken = tokenResponse.access_token;
-                console.log("✅ Access Token:", accessToken);
-                alert("Signed in with Google successfully!");
-            }
-        }).requestAccessToken();
-    };
-    // وصل کردن به دکمه
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com", // ← Client ID واقعی خودت
+        scope: "https://www.googleapis.com/auth/calendar.events",
+        callback: (tokenResponse) => {
+            accessToken = tokenResponse.access_token;
+            console.log("✅ Access Token:", accessToken);
+            alert("Signed in with Google successfully!");
+        }
+    });
+
     const loginBtn = document.getElementById("googleLoginBtn");
     if (loginBtn) {
         loginBtn.addEventListener("click", () => {
             tokenClient.requestAccessToken();
         });
-    } else {
-        console.error("❌ googleLoginBtn not found in DOM!");
     }
-});
 
     // === Local Storage ===
     function saveEvents() {
@@ -384,17 +380,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Navigation ===
     addEventBtn.onclick = addEvent;
     closeModalBtn.onclick = closeModal;
-    document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-    document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+    document.getElementById('prevMonth').onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    };
+    document.getElementById('nextMonth').onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    };
 
     // === Enable Notifications Button ===
     document.getElementById("enableNotiBtn").onclick = () => {
-        if (Notification.permission !== 'granted') Notification.requestPermission();
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
         alert("🔔 Notifications enabled (if allowed).");
     };
 
     // === Init ===
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+    }
     events.forEach(scheduleReminder);
     renderCalendar();
-
+});
