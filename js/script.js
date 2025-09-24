@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Google Login ===
     window.handleCredentialResponse = function () {
         google.accounts.oauth2.initTokenClient({
-            client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
+            client_id: "956969020323-cn4oj93p6nfavhs1fkiqmub6ggc20sq4.apps.googleusercontent.com",
             scope: "https://www.googleapis.com/auth/calendar.events",
             callback: (tokenResponse) => {
                 accessToken = tokenResponse.access_token;
