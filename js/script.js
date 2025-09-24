@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Global Variables ===
     let quickRecorder, quickChunks = [], quickRecording = false;
     let accessToken = null;
-    let tokenClient; 
+    let tokenClient;
 
     const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
     const calendarEl = document.getElementById('calendar');
@@ -14,29 +14,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const alarmSound = document.getElementById('alarmSound');
     const stopAlarmBtn = document.getElementById('stopAlarm');
     const alarmControls = document.getElementById('alarmControls');
-    
+
     let currentDate = new Date();
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
-    
-    console.log(tokenClient, accessToken);
+
+    console.log("Token client before init:", tokenClient, "Access token:", accessToken);
 
     // === Google Login ===
-    document.addEventListener("DOMContentLoaded", function () {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
-            scope: "https://www.googleapis.com/auth/calendar.events",
-            callback: (tokenResponse) => {
-                accessToken = tokenResponse.access_token;
-                console.log("✅ Access Token:", accessToken);
-                alert("Signed in with Google successfully!");
-            }
-        });
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
+        scope: "https://www.googleapis.com/auth/calendar.events",
+        callback: (tokenResponse) => {
+            accessToken = tokenResponse.access_token;
+            console.log("✅ Access Token:", accessToken);
+            alert("Signed in with Google successfully!");
+        }
+    });
 
-        document.getElementById("googleLoginBtn").addEventListener("click", function () {
+    const loginBtn = document.getElementById("googleLoginBtn");
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
             tokenClient.requestAccessToken();
         });
-    });
+    } else {
+        console.error("❌ googleLoginBtn not found in DOM!");
+    }
+});
+
 
     // === Local Storage ===
     function saveEvents() {
@@ -395,32 +400,3 @@ document.addEventListener("DOMContentLoaded", () => {
     events.forEach(scheduleReminder);
     renderCalendar();
 });
-
-// === Google Login ===
-let accessToken = null;
-
-function initGoogleLogin() {
-    const client = google.accounts.oauth2.initTokenClient({
-        client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
-        scope: "https://www.googleapis.com/auth/calendar.events",
-        callback: (tokenResponse) => {
-            accessToken = tokenResponse.access_token;
-            console.log("✅ Access Token:", accessToken);
-            alert("Signed in with Google successfully!");
-        }
-    });
-
-    client.requestAccessToken();
-}
-
-document.getElementById("googleLoginBtn")
-    .addEventListener("click", initGoogleLogin);
-
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("DOM fully loaded");
-    const btn = document.getElementById("googleLoginBtn");
-    btn.addEventListener("click", () => {
-        alert("Login button clicked!");
-    });
-});    
-
