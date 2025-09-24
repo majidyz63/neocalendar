@@ -207,3 +207,19 @@ form select {
     height: 26px;
     display: block;
 }
+#googleLoginBtn {
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    z-index: 1000;
+    position: relative;
+    display: inline-block;
+}
+
+#googleLoginBtn:hover {
+    background: #f5f5f5;
+}
