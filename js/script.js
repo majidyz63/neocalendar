@@ -30,6 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }).requestAccessToken();
     };
+    // وصل کردن به دکمه
+    const loginBtn = document.getElementById("googleLoginBtn");
+    if (loginBtn) {
+        loginBtn.addEventListener("click", () => {
+            tokenClient.requestAccessToken();
+        });
+    } else {
+        console.error("❌ googleLoginBtn not found in DOM!");
+    }
+});
 
     // === Local Storage ===
     function saveEvents() {
