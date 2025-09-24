@@ -409,3 +409,11 @@ function initGoogleLogin() {
 document.getElementById("googleLoginBtn")
     .addEventListener("click", initGoogleLogin);
 
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM fully loaded");
+    const btn = document.getElementById("googleLoginBtn");
+    btn.addEventListener("click", () => {
+        alert("Login button clicked!");
+    });
+});    
+
