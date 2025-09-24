@@ -1,4 +1,4 @@
-const CACHE_NAME = "neocal-v5"; // ⬅️ هر بار آپدیت کن
+const CACHE_NAME = "neocal-v6"; // هر بار آپدیت کن
 const FILES_TO_CACHE = [
     "/",
     "/index.html",
@@ -33,15 +33,17 @@ self.addEventListener("activate", (event) => {
     self.clients.claim();
 });
 
-// 📌 واکشی → استراتژی network-first
+// 📌 واکشی → فقط response کامل را کش کن
 self.addEventListener("fetch", (event) => {
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, clone);
-                });
+                if (response.status === 200) {
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, clone);
+                    });
+                }
                 return response;
             })
             .catch(() => caches.match(event.request))
