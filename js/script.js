@@ -40,8 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         console.error("❌ googleLoginBtn not found in DOM!");
     }
-});
-
 
     // === Local Storage ===
     function saveEvents() {
@@ -386,17 +384,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Navigation ===
     addEventBtn.onclick = addEvent;
     closeModalBtn.onclick = closeModal;
-    document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-    document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+    document.getElementById('prevMonth').onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    };
+    document.getElementById('nextMonth').onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    };
 
     // === Enable Notifications Button ===
     document.getElementById("enableNotiBtn").onclick = () => {
-        if (Notification.permission !== 'granted') Notification.requestPermission();
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
         alert("🔔 Notifications enabled (if allowed).");
     };
 
     // === Init ===
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+    }
     events.forEach(scheduleReminder);
     renderCalendar();
 });
