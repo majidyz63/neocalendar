@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Global Variables ===
     let quickRecorder, quickChunks = [], quickRecording = false;
     let accessToken = null;
+    let tokenClient; 
 
     const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
     const calendarEl = document.getElementById('calendar');
@@ -17,10 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentDate = new Date();
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
+    
+    console.log(tokenClient, accessToken);
 
     // === Google Login ===
-    window.handleCredentialResponse = function () {
-        google.accounts.oauth2.initTokenClient({
+    document.addEventListener("DOMContentLoaded", function () {
+        tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: "612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com",
             scope: "https://www.googleapis.com/auth/calendar.events",
             callback: (tokenResponse) => {
@@ -28,8 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("✅ Access Token:", accessToken);
                 alert("Signed in with Google successfully!");
             }
-        }).requestAccessToken();
-    };
+        });
+
+        document.getElementById("googleLoginBtn").addEventListener("click", function () {
+            tokenClient.requestAccessToken();
+        });
+    });
 
     // === Local Storage ===
     function saveEvents() {
