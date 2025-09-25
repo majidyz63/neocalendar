@@ -2,19 +2,27 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import os
-import traceback
+import os, json, traceback
 
 app = Flask(__name__)
-CORS(app)
+
+# ✅ فقط اجازه به Vercel + Local
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://127.0.0.1:5000",
+            "http://localhost:5000",
+            "https://neocalendar.vercel.app"
+        ]
+    }
+})
 
 # === Load Google Service Account ===
-import json
-
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 def get_calendar_service():
     try:
+        # Service Account JSON از Environment (نه فایل)
         service_account_info = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
         creds = service_account.Credentials.from_service_account_info(
             service_account_info, scopes=SCOPES
@@ -47,8 +55,8 @@ def add_event():
 
         event = {
             "summary": title,
-            "start": {"dateTime": start, "timeZone": "UTC"},
-            "end": {"dateTime": end, "timeZone": "UTC"}
+            "start": {"dateTime": start, "timeZone": "Europe/Brussels"},
+            "end": {"dateTime": end, "timeZone": "Europe/Brussels"}
         }
 
         service = get_calendar_service()
