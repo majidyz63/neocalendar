@@ -22,12 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // === Google Calendar: Export/Save/Delete via API ===
     async function saveEventToGoogle(ev) {
-        const startDate = new Date(ev.datetime);
-        const endDate = new Date(startDate.getTime() + 60 * 60000);
         const body = {
             title: ev.title,
-            start: startDate.toISOString(),
-            end: endDate.toISOString()
+            datetime: ev.datetime,
+            location: ev.location || "",
+            notes: ev.notes || "",
+            reminder: ev.reminder || 0
         };
         try {
             const resp = await fetch(`${API_BASE}/api/add_event`, {
@@ -37,13 +37,14 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             if (!resp.ok) throw new Error(await resp.text());
             const data = await resp.json();
-            ev.gcalId = data.id;
+            ev.gcalId = data.event ? data.event.id : null;
             saveEvents();
             alert("✅ Event saved to Google Calendar!");
         } catch {
             alert("❌ Failed to save event to Google Calendar.");
         }
     }
+
     async function deleteEventFromGoogle(ev) {
         if (!ev.gcalId) return;
         try {
@@ -180,8 +181,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!newEvent.datetime) return alert("Please select a valid date & time");
             events.push(newEvent); saveEvents(); scheduleReminder(newEvent);
             renderEvents(); renderCalendar();
-            saveEventToGoogle(newEvent);
+            saveEventToGoogle(newEvent);   // ✅ اینجا درست شد
         };
+
     }
 
     // === Edit Event ===
@@ -218,8 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ev.datetime = form.querySelector('[name=datetime]').value;
             ev.reminder = parseInt(form.querySelector('[name=reminder]').value);
             saveEvents(); scheduleReminder(ev); renderEvents(); renderCalendar();
-            saveEventToGoogle(ev);
+            saveEventToGoogle(ev);   // ✅ اینجا هم درست شد
         };
+
     }
 
     // === Delete Event (from UI + Google) ===
