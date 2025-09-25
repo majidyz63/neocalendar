@@ -21,31 +21,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // === Google Calendar: Export/Save/Delete via API ===
-    function saveEventToGoogle(ev) {
+    async function saveEventToGoogle(ev) {
         const startDate = new Date(ev.datetime);
         const endDate = new Date(startDate.getTime() + 60 * 60000);
-
         const body = {
             title: ev.title,
             start: startDate.toISOString(),
             end: endDate.toISOString()
         };
-
-        fetch(`${API_BASE}/api/add_event`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-            .then(resp => {
-                if (!resp.ok) throw new Error("Save failed");
-                return resp.json();
-            })
-            .then(data => {
-                ev.gcalId = data.id;
-                saveEvents();
-                alert("✅ Event saved to Google Calendar!");
-            })
-            .catch(() => alert("❌ Failed to save event to Google Calendar."));
+        try {
+            const resp = await fetch(`${API_BASE}/api/add_event`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            const data = await resp.json();
+            ev.gcalId = data.id;
+            saveEvents();
+            alert("✅ Event saved to Google Calendar!");
+        } catch {
+            alert("❌ Failed to save event to Google Calendar.");
+        }
     }
 
     async function deleteEventFromGoogle(ev) {
@@ -65,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => triggerReminder(ev), remindTime - now);
         }
     }
+
     function triggerReminder(ev) {
         if (Notification.permission === 'granted') {
             new Notification('Event Reminder', { body: `${ev.title} at ${new Date(ev.datetime).toLocaleString()}` });
@@ -72,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alarmSound.play();
         alarmControls.style.display = 'block';
     }
+
     stopAlarmBtn.onclick = () => {
         alarmSound.pause();
         alarmSound.currentTime = 0;
@@ -84,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +
             'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
+
     function renderCalendar() {
         calendarEl.innerHTML = '';
         const year = currentDate.getFullYear();
@@ -91,18 +91,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         monthYearEl.textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
         ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
             const div = document.createElement('div');
-            div.className = 'day-name'; div.textContent = d; calendarEl.appendChild(div);
+            div.className = 'day-name';
+            div.textContent = d;
+            calendarEl.appendChild(div);
         });
+
         for (let i = 0; i < firstDay; i++) {
             const div = document.createElement('div');
-            div.className = 'day'; div.style.visibility = 'hidden';
+            div.className = 'day';
+            div.style.visibility = 'hidden';
             calendarEl.appendChild(div);
         }
+
         for (let d = 1; d <= daysInMonth; d++) {
             const div = document.createElement('div');
-            div.className = 'day'; div.textContent = d;
+            div.className = 'day';
+            div.textContent = d;
             const thisDate = new Date(year, month, d);
             if (thisDate.toDateString() === new Date().toDateString()) div.classList.add('today');
             const dayEvents = events.filter(e => new Date(e.datetime).toDateString() === thisDate.toDateString());
@@ -112,7 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function openModal(date) { selectedDate = date; modal.style.display = 'flex'; renderEvents(); }
+    function openModal(date) {
+        selectedDate = date;
+        modal.style.display = 'flex';
+        renderEvents();
+    }
     function closeModal() { modal.style.display = 'none'; }
 
     function renderEvents() {
@@ -159,7 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <button type="submit" class="btn-add">💾 Save</button>
             <button type="button" id="saveExportBtn" class="btn-add">Save + Google Calendar</button>
         `;
-        eventListEl.innerHTML = ''; eventListEl.appendChild(form);
+        eventListEl.innerHTML = '';
+        eventListEl.appendChild(form);
 
         form.onsubmit = e => {
             e.preventDefault();
@@ -170,8 +182,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 reminder: parseInt(form.querySelector('[name=reminder]').value)
             };
             if (!newEvent.datetime) return alert("Please select a valid date & time");
-            events.push(newEvent); saveEvents(); scheduleReminder(newEvent);
-            renderEvents(); renderCalendar();
+            events.push(newEvent);
+            saveEvents();
+            scheduleReminder(newEvent);
+            renderEvents();
+            renderCalendar();
         };
 
         document.getElementById("saveExportBtn").onclick = () => {
@@ -182,11 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 reminder: parseInt(form.querySelector('[name=reminder]').value)
             };
             if (!newEvent.datetime) return alert("Please select a valid date & time");
-            events.push(newEvent); saveEvents(); scheduleReminder(newEvent);
-            renderEvents(); renderCalendar();
-            saveEventToGoogle(newEvent);   // ✅ اینجا درست شد
+            events.push(newEvent);
+            saveEvents();
+            scheduleReminder(newEvent);
+            renderEvents();
+            renderCalendar();
+            saveEventToGoogle(newEvent);
         };
-
     }
 
     // === Edit Event ===
@@ -208,30 +225,38 @@ document.addEventListener("DOMContentLoaded", () => {
             <button type="button" id="editExportBtn" class="btn-add">Save + Google Calendar</button>
         `;
         form.querySelector('[name=reminder]').value = ev.reminder;
-        eventListEl.innerHTML = ''; eventListEl.appendChild(form);
+        eventListEl.innerHTML = '';
+        eventListEl.appendChild(form);
 
         form.onsubmit = e => {
             e.preventDefault();
             ev.title = form.querySelector('[name=title]').value;
             ev.datetime = form.querySelector('[name=datetime]').value;
             ev.reminder = parseInt(form.querySelector('[name=reminder]').value);
-            saveEvents(); scheduleReminder(ev); renderEvents(); renderCalendar();
+            saveEvents();
+            scheduleReminder(ev);
+            renderEvents();
+            renderCalendar();
         };
 
         document.getElementById("editExportBtn").onclick = () => {
             ev.title = form.querySelector('[name=title]').value;
             ev.datetime = form.querySelector('[name=datetime]').value;
             ev.reminder = parseInt(form.querySelector('[name=reminder]').value);
-            saveEvents(); scheduleReminder(ev); renderEvents(); renderCalendar();
-            saveEventToGoogle(ev);   // ✅ اینجا هم درست شد
+            saveEvents();
+            scheduleReminder(ev);
+            renderEvents();
+            renderCalendar();
+            saveEventToGoogle(ev);
         };
-
     }
 
     // === Delete Event (from UI + Google) ===
     function deleteEvent(ev) {
         events = events.filter(e => e.id !== ev.id);
-        saveEvents(); renderEvents(); renderCalendar();
+        saveEvents();
+        renderEvents();
+        renderCalendar();
     }
 
     // === All Events Modal ===
