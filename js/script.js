@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // === API Base URLs ===
     const EXTRACT_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app"; // AI Extractor
-    const CAL_BASE = "https://neocalendar.vercel.app"; // NeoCalendar Backend (Google Calendar)
+    const CAL_BASE = "https://neocal-backend-612704855594.europe-west1.run.app"; // NeoCalendar Backend (Cloud Run)
 
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
