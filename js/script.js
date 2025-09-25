@@ -256,6 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+
     // === All Events Modal ===
     const allEventsModal = document.getElementById('allEventsModal');
     const allEventsList = document.getElementById('allEventsList');
