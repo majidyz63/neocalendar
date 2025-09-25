@@ -2,9 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // === Vars ===
     let quickRecorder, quickChunks = [], quickRecording = false;
 
-    // 🔹 Backend URLs
-    const EXTRACTOR_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";  // AI Extractor
-    const CAL_BASE = "https://neocalendar.vercel.app";  // Google Calendar Backend
+    // === API Base URLs ===
+    const EXTRACT_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app"; // AI Extractor
+    const CAL_BASE = "https://neocalendar.vercel.app"; // NeoCalendar Backend (Google Calendar)
 
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveEvents();
             alert("✅ Event saved to Google Calendar!");
         } catch (err) {
-            console.error("❌ Save to Google Calendar failed:", err);
+            console.error("❌ Save error:", err);
             alert("❌ Failed to save event to Google Calendar.");
         }
     }
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch(`${CAL_BASE}/api/delete_event/${ev.gcalId}`, { method: "DELETE" });
             if (resp.ok) ev.gcalId = null;
         } catch (err) {
-            console.error("❌ Delete from Google Calendar failed:", err);
+            console.error("❌ Delete error:", err);
         }
     }
 
