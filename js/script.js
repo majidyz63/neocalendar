@@ -21,28 +21,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // === Google Calendar: Export/Save/Delete via API ===
-    async function saveEventToGoogle(ev) {
+    function saveEventToGoogle(ev) {
+        const startDate = new Date(ev.datetime);
+        const endDate = new Date(startDate.getTime() + 60 * 60000);
+
         const body = {
             title: ev.title,
-            datetime: ev.datetime,
-            location: ev.location || "",
-            notes: ev.notes || "",
-            reminder: ev.reminder || 0
+            start: startDate.toISOString(),
+            end: endDate.toISOString()
         };
-        try {
-            const resp = await fetch(`${API_BASE}/api/add_event`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
-            if (!resp.ok) throw new Error(await resp.text());
-            const data = await resp.json();
-            ev.gcalId = data.event ? data.event.id : null;
-            saveEvents();
-            alert("✅ Event saved to Google Calendar!");
-        } catch {
-            alert("❌ Failed to save event to Google Calendar.");
-        }
+
+        fetch(`${API_BASE}/api/add_event`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+            .then(resp => {
+                if (!resp.ok) throw new Error("Save failed");
+                return resp.json();
+            })
+            .then(data => {
+                ev.gcalId = data.id;
+                saveEvents();
+                alert("✅ Event saved to Google Calendar!");
+            })
+            .catch(() => alert("❌ Failed to save event to Google Calendar."));
     }
 
     async function deleteEventFromGoogle(ev) {
