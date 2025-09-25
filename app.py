@@ -1,57 +1,76 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+import os
+import traceback
 
 app = Flask(__name__)
-CORS(app)  # اجازه میده فرانت (Vercel) بتونه API رو صدا بزنه
 
-# 🔑 بارگذاری Service Account از فایل JSON
-# بهتره اسم فایل رو به جای هاردکد، با ENV بخونی
-SERVICE_ACCOUNT_FILE = "service_lucky_471512.json"
+# === Load Google Service Account ===
+SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "service_account.json")
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-creds = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE,
-    scopes=["https://www.googleapis.com/auth/calendar"]
-)
+def get_calendar_service():
+    try:
+        creds = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES
+        )
+        service = build("calendar", "v3", credentials=creds)
+        return service
+    except Exception as e:
+        print("❌ Failed to load service account:", e)
+        traceback.print_exc()
+        raise
 
-
-# 📌 Route: افزودن ایونت
+# === API: Add Event ===
 @app.route("/api/add_event", methods=["POST"])
 def add_event():
-    data = request.json
-    title = data.get("title")
-    start = data.get("start")
-    end = data.get("end")
-
-    if not title or not start or not end:
-        return jsonify({"error": "Missing required fields"}), 400
-
     try:
-        service = build("calendar", "v3", credentials=creds)
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        start = data.get("start")
+        end = data.get("end")
+        title = data.get("title", "Untitled Event")
+
+        if not start or not end:
+            return jsonify({"error": "Missing start or end datetime"}), 400
+
         event = {
             "summary": title,
             "start": {"dateTime": start, "timeZone": "UTC"},
-            "end": {"dateTime": end, "timeZone": "UTC"},
+            "end": {"dateTime": end, "timeZone": "UTC"}
         }
-        created_event = service.events().insert(calendarId="primary", body=event).execute()
-        return jsonify({"id": created_event["id"], "status": "created"})
+
+        service = get_calendar_service()
+        created = service.events().insert(calendarId="primary", body=event).execute()
+
+        print("✅ Event created:", created)
+        return jsonify({"id": created["id"], "htmlLink": created.get("htmlLink")})
+
     except Exception as e:
-        import traceback
-        print("🔥 Google Calendar API Error:", traceback.format_exc())
+        print("🔥 Error in /api/add_event:", e)
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
-
-# 📌 Route: حذف ایونت
+# === API: Delete Event ===
 @app.route("/api/delete_event/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     try:
-        service = build("calendar", "v3", credentials=creds)
+        service = get_calendar_service()
         service.events().delete(calendarId="primary", eventId=event_id).execute()
-        return jsonify({"status": "deleted"})
+        print(f"🗑️ Event {event_id} deleted from Google Calendar")
+        return jsonify({"status": "deleted", "id": event_id})
     except Exception as e:
+        print("🔥 Error in /api/delete_event:", e)
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+# === Root ===
+@app.route("/")
+def home():
+    return "✅ NeoCalendar Backend is running"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
