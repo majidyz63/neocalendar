@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const resp = await fetch("https://YOUR_BACKEND_URL/api/add_event", {
+            const resp = await fetch("https://shared-deborah-neoprojects-65e1dc36.koyeb.app/api/add_event", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -243,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderCalendar();
 
         if (ev.gcalId) {
-            fetch(`http://127.0.0.1:5000/api/delete_event/${ev.gcalId}`, {
+            fetch(`https://shared-deborah-neoprojects-65e1dc36.koyeb.app/api/delete_event/${ev.gcalId}`, {
                 method: "DELETE"
             }).then(resp => {
                 if (resp.status === 200) {
