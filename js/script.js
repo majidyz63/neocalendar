@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     // === Global Variables ===
     let quickRecorder, quickChunks = [], quickRecording = false;
-    let accessToken = null;
 
+    const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
     const modal = document.getElementById('eventModal');
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('events', JSON.stringify(events));
     }
 
-    // === Google Calendar Sync (via backend + Service Account) ===
+    // === Google Calendar Sync (via backend Service Account) ===
     async function saveEventToGoogle(ev) {
         const startDate = new Date(ev.datetime);
         const endDate = new Date(startDate.getTime() + 60 * 60000);
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const resp = await fetch("https://shared-deborah-neoprojects-65e1dc36.koyeb.app/api/add_event", {
+            const resp = await fetch(`${API_BASE}/api/add_event`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -44,11 +44,25 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await resp.json();
             ev.gcalId = data.id;
             saveEvents();
-            console.log("📅 Event synced with Google Calendar via Service Account:", data);
+            console.log("📅 Event synced with Google Calendar:", data);
             alert("✅ Event saved to Google Calendar!");
         } catch (err) {
             console.error("❌ Error saving to Google Calendar:", err);
             alert("❌ Failed to save event to Google Calendar.");
+        }
+    }
+
+    async function deleteEventFromGoogle(ev) {
+        if (!ev.gcalId) return;
+        try {
+            const resp = await fetch(`${API_BASE}/api/delete_event/${ev.gcalId}`, {
+                method: "DELETE"
+            });
+            if (resp.status === 200) {
+                console.log(`🗑️ Event ${ev.gcalId} deleted from Google Calendar`);
+            }
+        } catch (err) {
+            console.error("❌ Error deleting from Google Calendar:", err);
         }
     }
 
@@ -142,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="btn-add">📅 ${ev.gcalId ? "Update" : "Export"}</button>
                 `;
                 div.querySelector('.btn-edit').onclick = () => editEvent(ev);
-                div.querySelector('.btn-delete').onclick = () => deleteEvent(ev);
+                div.querySelector('.btn-delete').onclick = () => { deleteEvent(ev); deleteEventFromGoogle(ev); };
                 div.querySelector('.btn-add').onclick = () => saveEventToGoogle(ev);
                 eventListEl.appendChild(div);
             });
@@ -235,27 +249,12 @@ document.addEventListener("DOMContentLoaded", () => {
             saveEventToGoogle(ev);
         };
     }
+
     // === Delete Event ===
     function deleteEvent(ev) {
         events = events.filter(e => e.id !== ev.id);
-        saveEvents();
-        renderEvents();
-        renderCalendar();
-
-        if (ev.gcalId) {
-            fetch(`https://shared-deborah-neoprojects-65e1dc36.koyeb.app/api/delete_event/${ev.gcalId}`, {
-                method: "DELETE"
-            }).then(resp => {
-                if (resp.status === 200) {
-                    console.log(`🗑️ Event ${ev.gcalId} deleted from Google Calendar`);
-                }
-            }).catch(err => {
-                console.error("❌ Error deleting event:", err);
-            });
-        }
+        saveEvents(); renderEvents(); renderCalendar();
     }
-
-
 
     // === All Events Modal ===
     const allEventsModal = document.getElementById('allEventsModal');
@@ -280,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button class="btn-delete">❌ Delete</button>
                 <button class="btn-add">📅 ${ev.gcalId ? "Update" : "Export"}</button>`;
             div.querySelector('.btn-edit').onclick = () => { selectedDate = new Date(ev.datetime); allEventsModal.style.display = 'none'; modal.style.display = 'flex'; editEvent(ev); };
-            div.querySelector('.btn-delete').onclick = () => { deleteEvent(ev); renderAllEvents(filter); };
+            div.querySelector('.btn-delete').onclick = () => { deleteEvent(ev); deleteEventFromGoogle(ev); renderAllEvents(filter); };
             div.querySelector('.btn-add').onclick = () => saveEventToGoogle(ev);
             allEventsList.appendChild(div);
         });
@@ -326,8 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append("file", audioBlob, "quick_recording.webm");
             formData.append("lang", lang);
-            const resp = await fetch("https://shared-deborah-neoprojects-65e1dc36.koyeb.app/api/voice_event", {
-
+            const resp = await fetch(`${API_BASE}/api/voice_event`, {
                 method: "POST",
                 body: formData
             });

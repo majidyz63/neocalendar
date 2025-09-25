@@ -9,15 +9,9 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/script.js" defer></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
-    <!-- Google Sign-In -->
-    <div id="g_id_onload" data-client_id="612704855594-32ghok7gs8hivenjb7dvpde0uu4hre73.apps.googleusercontent.com"
-        data-scope="https://www.googleapis.com/auth/calendar.events" data-callback="handleCredentialResponse"></div>
-    <div class="g_id_signin" data-type="standard"></div>
-
     <header>
         <button id="prevMonth">◀</button>
         <span id="monthYear"></span>
@@ -28,12 +22,10 @@
             <option value="en-US" selected>🇬🇧 English</option>
             <option value="nl-NL">🇳🇱 Nederlands</option>
         </select>
-        <!-- <button id="voiceQuickBtn" class="btn-add">🎙️ Voice Quick Add</button> -->
         <button id="voiceQuickBtn" class="btn-add">
             <img src="microphone_emoji.png" alt="Mic">
             Voice Quick Add
         </button>
-
         <button id="enableNotiBtn">🔔 Enable Notifications</button>
     </header>
 
