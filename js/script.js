@@ -17,65 +17,34 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
 
-    // === Google Login ===
-    window.handleCredentialResponse = function () {
-        google.accounts.oauth2.initTokenClient({
-            client_id: "956969020323-cn4oj93p6nfavhs1fkiqmub6ggc20sq4.apps.googleusercontent.com",
-            scope: "https://www.googleapis.com/auth/calendar.events",
-            callback: (tokenResponse) => {
-                accessToken = tokenResponse.access_token;
-                console.log("✅ Access Token:", accessToken);
-                alert("Signed in with Google successfully!");
-            }
-        }).requestAccessToken();
-    };
-
     // === Local Storage ===
     function saveEvents() {
         localStorage.setItem('events', JSON.stringify(events));
     }
 
-    // === Google Calendar Sync ===
+    // === Google Calendar Sync (via backend + Service Account) ===
     async function saveEventToGoogle(ev) {
-        if (!accessToken) {
-            alert("⚠️ Please sign in with Google first.");
-            return;
-        }
-
         const startDate = new Date(ev.datetime);
         const endDate = new Date(startDate.getTime() + 60 * 60000);
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
         const body = {
-            summary: ev.title,
-            start: { dateTime: startDate.toISOString(), timeZone },
-            end: { dateTime: endDate.toISOString(), timeZone },
-            reminders: {
-                useDefault: false,
-                overrides: [{ method: "popup", minutes: ev.reminder || 0 }]
-            }
+            title: ev.title,
+            start: startDate.toISOString(),
+            end: endDate.toISOString()
         };
 
         try {
-            let resp, data;
-            if (ev.gcalId) {
-                resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.gcalId}`, {
-                    method: "PATCH",
-                    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-            } else {
-                resp = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(body)
-                });
-            }
+            const resp = await fetch("https://YOUR_BACKEND_URL/api/add_event", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
             if (!resp.ok) throw new Error(await resp.text());
-            data = await resp.json();
+            const data = await resp.json();
             ev.gcalId = data.id;
             saveEvents();
-            console.log("📅 Event synced with Google Calendar:", data);
+            console.log("📅 Event synced with Google Calendar via Service Account:", data);
             alert("✅ Event saved to Google Calendar!");
         } catch (err) {
             console.error("❌ Error saving to Google Calendar:", err);
@@ -266,21 +235,26 @@ document.addEventListener("DOMContentLoaded", () => {
             saveEventToGoogle(ev);
         };
     }
-
     // === Delete Event ===
     function deleteEvent(ev) {
         events = events.filter(e => e.id !== ev.id);
-        saveEvents(); renderEvents(); renderCalendar();
+        saveEvents();
+        renderEvents();
+        renderCalendar();
 
-        if (ev.gcalId && accessToken) {
-            fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${ev.gcalId}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${accessToken}` }
+        if (ev.gcalId) {
+            fetch(`http://127.0.0.1:5000/api/delete_event/${ev.gcalId}`, {
+                method: "DELETE"
             }).then(resp => {
-                if (resp.status === 204) console.log(`🗑️ Event ${ev.gcalId} deleted from Google Calendar`);
+                if (resp.status === 200) {
+                    console.log(`🗑️ Event ${ev.gcalId} deleted from Google Calendar`);
+                }
+            }).catch(err => {
+                console.error("❌ Error deleting event:", err);
             });
         }
     }
+
 
     // === All Events Modal ===
     const allEventsModal = document.getElementById('allEventsModal');
