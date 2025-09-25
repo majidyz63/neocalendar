@@ -37,6 +37,8 @@ def add_event():
         created_event = service.events().insert(calendarId="primary", body=event).execute()
         return jsonify({"id": created_event["id"], "status": "created"})
     except Exception as e:
+        import traceback
+        print("🔥 Google Calendar API Error:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
