@@ -1,7 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     // === Vars ===
     let quickRecorder, quickChunks = [], quickRecording = false;
-    const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
+
+    // 🔹 Backend URLs
+    const EXTRACTOR_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";  // AI Extractor
+    const CAL_BASE = "https://neocalendar.vercel.app";  // Google Calendar Backend
+
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
     const modal = document.getElementById('eventModal');
@@ -14,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentDate = new Date();
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
+
 
     // === Storage ===
     function saveEvents() {
@@ -30,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
             end: endDate.toISOString()
         };
         try {
-            const resp = await fetch(`${API_BASE}/api/add_event`, {
+            const resp = await fetch(`${CAL_BASE}/api/add_event`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -40,7 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ev.gcalId = data.id;
             saveEvents();
             alert("✅ Event saved to Google Calendar!");
-        } catch {
+        } catch (err) {
+            console.error("❌ Save to Google Calendar failed:", err);
             alert("❌ Failed to save event to Google Calendar.");
         }
     }
@@ -48,9 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
     async function deleteEventFromGoogle(ev) {
         if (!ev.gcalId) return;
         try {
-            const resp = await fetch(`${API_BASE}/api/delete_event/${ev.gcalId}`, { method: "DELETE" });
+            const resp = await fetch(`${CAL_BASE}/api/delete_event/${ev.gcalId}`, { method: "DELETE" });
             if (resp.ok) ev.gcalId = null;
-        } catch { }
+        } catch (err) {
+            console.error("❌ Delete from Google Calendar failed:", err);
+        }
     }
 
     // === Reminders ===
@@ -327,13 +335,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append("file", audioBlob, "quick_recording.webm");
             formData.append("lang", lang);
-            const resp = await fetch(`${API_BASE}/api/voice_event`, { method: "POST", body: formData });
+
+            // 🔹 به Extractor می‌فرسته
+            const resp = await fetch(`${EXTRACTOR_BASE}/api/voice_event`, { method: "POST", body: formData });
             const data = await resp.json();
+
             if (!resp.ok || !data.datetime) throw new Error("Invalid response");
             if (data.reminder === undefined || data.reminder === null) data.reminder = 0;
-            events.push(data); saveEvents(); scheduleReminder(data); renderEvents(); renderCalendar();
+
+            events.push(data);
+            saveEvents();
+            scheduleReminder(data);
+            renderEvents();
+            renderCalendar();
             alert("✅ Event added from quick voice!");
-        } catch {
+        } catch (err) {
+            console.error("❌ Error creating quick voice event:", err);
             alert("❌ Error creating quick voice event.");
         } finally {
             quickBtn.disabled = false;
