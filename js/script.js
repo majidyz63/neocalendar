@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // === Global Variables ===
+    // === Vars ===
     let quickRecorder, quickChunks = [], quickRecording = false;
-
     const API_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app";
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
@@ -12,58 +11,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const alarmSound = document.getElementById('alarmSound');
     const stopAlarmBtn = document.getElementById('stopAlarm');
     const alarmControls = document.getElementById('alarmControls');
-
     let currentDate = new Date();
     let selectedDate = null;
     let events = JSON.parse(localStorage.getItem('events') || '[]');
 
-    // === Local Storage ===
+    // === Storage ===
     function saveEvents() {
         localStorage.setItem('events', JSON.stringify(events));
     }
 
-    // === Google Calendar Sync (via backend Service Account) ===
+    // === Google Calendar: Export/Save/Delete via API ===
     async function saveEventToGoogle(ev) {
         const startDate = new Date(ev.datetime);
         const endDate = new Date(startDate.getTime() + 60 * 60000);
-
         const body = {
             title: ev.title,
             start: startDate.toISOString(),
             end: endDate.toISOString()
         };
-
         try {
             const resp = await fetch(`${API_BASE}/api/add_event`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
-
             if (!resp.ok) throw new Error(await resp.text());
             const data = await resp.json();
             ev.gcalId = data.id;
             saveEvents();
-            console.log("📅 Event synced with Google Calendar:", data);
             alert("✅ Event saved to Google Calendar!");
-        } catch (err) {
-            console.error("❌ Error saving to Google Calendar:", err);
+        } catch {
             alert("❌ Failed to save event to Google Calendar.");
         }
     }
-
     async function deleteEventFromGoogle(ev) {
         if (!ev.gcalId) return;
         try {
-            const resp = await fetch(`${API_BASE}/api/delete_event/${ev.gcalId}`, {
-                method: "DELETE"
-            });
-            if (resp.status === 200) {
-                console.log(`🗑️ Event ${ev.gcalId} deleted from Google Calendar`);
-            }
-        } catch (err) {
-            console.error("❌ Error deleting from Google Calendar:", err);
-        }
+            const resp = await fetch(`${API_BASE}/api/delete_event/${ev.gcalId}`, { method: "DELETE" });
+            if (resp.ok) ev.gcalId = null;
+        } catch { }
     }
 
     // === Reminders ===
@@ -72,11 +58,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const remindTime = eventTime - (ev.reminder * 60000);
         const now = Date.now();
         if (ev.reminder > 0 && remindTime > now) {
-            const delay = remindTime - now;
-            setTimeout(() => triggerReminder(ev), delay);
+            setTimeout(() => triggerReminder(ev), remindTime - now);
         }
     }
-
     function triggerReminder(ev) {
         if (Notification.permission === 'granted') {
             new Notification('Event Reminder', { body: `${ev.title} at ${new Date(ev.datetime).toLocaleString()}` });
@@ -84,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
         alarmSound.play();
         alarmControls.style.display = 'block';
     }
-
     stopAlarmBtn.onclick = () => {
         alarmSound.pause();
         alarmSound.currentTime = 0;
@@ -92,40 +75,30 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // === Calendar Render ===
+    function pad(n) { return n.toString().padStart(2, '0'); }
     function toLocalDatetimeValue(date) {
-        const pad = n => n.toString().padStart(2, '0');
         return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +
             'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
-
     function renderCalendar() {
         calendarEl.innerHTML = '';
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         monthYearEl.textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        dayNames.forEach(d => {
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
             const div = document.createElement('div');
-            div.className = 'day-name';
-            div.textContent = d;
-            calendarEl.appendChild(div);
+            div.className = 'day-name'; div.textContent = d; calendarEl.appendChild(div);
         });
-
         for (let i = 0; i < firstDay; i++) {
             const div = document.createElement('div');
-            div.className = 'day';
-            div.style.visibility = 'hidden';
+            div.className = 'day'; div.style.visibility = 'hidden';
             calendarEl.appendChild(div);
         }
-
         for (let d = 1; d <= daysInMonth; d++) {
             const div = document.createElement('div');
-            div.className = 'day';
-            div.textContent = d;
+            div.className = 'day'; div.textContent = d;
             const thisDate = new Date(year, month, d);
             if (thisDate.toDateString() === new Date().toDateString()) div.classList.add('today');
             const dayEvents = events.filter(e => new Date(e.datetime).toDateString() === thisDate.toDateString());
@@ -144,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dayEvents.length === 0) {
             eventListEl.innerHTML = '<p>No events.</p>';
         } else {
-            dayEvents.forEach((ev) => {
+            dayEvents.forEach(ev => {
                 const div = document.createElement('div');
                 div.className = 'event';
                 div.innerHTML = `
@@ -153,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     Reminder: ${ev.reminder} min before<br>
                     <button class="btn-edit">✏️ Edit</button>
                     <button class="btn-delete">❌ Delete</button>
-                    <button class="btn-add">📅 ${ev.gcalId ? "Update" : "Export"}</button>
+                    <button class="btn-add">${ev.gcalId ? "Update" : "Export"}</button>
                 `;
                 div.querySelector('.btn-edit').onclick = () => editEvent(ev);
                 div.querySelector('.btn-delete').onclick = () => { deleteEvent(ev); deleteEventFromGoogle(ev); };
@@ -180,12 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="1440">1 day before</option>
             </select></label>
             <button type="submit" class="btn-add">💾 Save</button>
-            <button type="button" id="saveExportBtn" class="btn-add">💾 Save + 📅 Google Calendar</button>
+            <button type="button" id="saveExportBtn" class="btn-add">Save + Google Calendar</button>
         `;
-        eventListEl.innerHTML = '';
-        eventListEl.appendChild(form);
+        eventListEl.innerHTML = ''; eventListEl.appendChild(form);
 
-        form.onsubmit = (e) => {
+        form.onsubmit = e => {
             e.preventDefault();
             const newEvent = {
                 id: Date.now(),
@@ -193,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 datetime: form.querySelector('[name=datetime]').value,
                 reminder: parseInt(form.querySelector('[name=reminder]').value)
             };
-            if (!newEvent.datetime) { alert("Please select a valid date & time"); return; }
+            if (!newEvent.datetime) return alert("Please select a valid date & time");
             events.push(newEvent); saveEvents(); scheduleReminder(newEvent);
             renderEvents(); renderCalendar();
         };
@@ -205,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 datetime: form.querySelector('[name=datetime]').value,
                 reminder: parseInt(form.querySelector('[name=reminder]').value)
             };
-            if (!newEvent.datetime) { alert("Please select a valid date & time"); return; }
+            if (!newEvent.datetime) return alert("Please select a valid date & time");
             events.push(newEvent); saveEvents(); scheduleReminder(newEvent);
             renderEvents(); renderCalendar();
             saveEventToGoogle(newEvent);
@@ -228,12 +200,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <option value="1440">1 day before</option>
             </select></label>
             <button type="submit" class="btn-add">💾 Save</button>
-            <button type="button" id="editExportBtn" class="btn-add">💾 Save + 📅 Google Calendar</button>
+            <button type="button" id="editExportBtn" class="btn-add">Save + Google Calendar</button>
         `;
         form.querySelector('[name=reminder]').value = ev.reminder;
         eventListEl.innerHTML = ''; eventListEl.appendChild(form);
 
-        form.onsubmit = (e) => {
+        form.onsubmit = e => {
             e.preventDefault();
             ev.title = form.querySelector('[name=title]').value;
             ev.datetime = form.querySelector('[name=datetime]').value;
@@ -250,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // === Delete Event ===
+    // === Delete Event (from UI + Google) ===
     function deleteEvent(ev) {
         events = events.filter(e => e.id !== ev.id);
         saveEvents(); renderEvents(); renderCalendar();
@@ -277,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 Reminder: ${ev.reminder} min<br>
                 <button class="btn-edit">✏️ Edit</button>
                 <button class="btn-delete">❌ Delete</button>
-                <button class="btn-add">📅 ${ev.gcalId ? "Update" : "Export"}</button>`;
+                <button class="btn-add">${ev.gcalId ? "Update" : "Export"}</button>`;
             div.querySelector('.btn-edit').onclick = () => { selectedDate = new Date(ev.datetime); allEventsModal.style.display = 'none'; modal.style.display = 'flex'; editEvent(ev); };
             div.querySelector('.btn-delete').onclick = () => { deleteEvent(ev); deleteEventFromGoogle(ev); renderAllEvents(filter); };
             div.querySelector('.btn-add').onclick = () => saveEventToGoogle(ev);
@@ -305,8 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 quickRecording = true;
                 quickBtn.textContent = "⏹ Stop Recording";
                 quickBtn.classList.add("recording");
-            } catch (err) {
-                console.error("Mic error:", err);
+            } catch {
                 alert("Microphone not available.");
             }
         } else {
@@ -325,17 +296,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const formData = new FormData();
             formData.append("file", audioBlob, "quick_recording.webm");
             formData.append("lang", lang);
-            const resp = await fetch(`${API_BASE}/api/voice_event`, {
-                method: "POST",
-                body: formData
-            });
+            const resp = await fetch(`${API_BASE}/api/voice_event`, { method: "POST", body: formData });
             const data = await resp.json();
             if (!resp.ok || !data.datetime) throw new Error("Invalid response");
             if (data.reminder === undefined || data.reminder === null) data.reminder = 0;
             events.push(data); saveEvents(); scheduleReminder(data); renderEvents(); renderCalendar();
             alert("✅ Event added from quick voice!");
-        } catch (err) {
-            console.error("Voice quick error:", err);
+        } catch {
             alert("❌ Error creating quick voice event.");
         } finally {
             quickBtn.disabled = false;
@@ -356,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("🔔 Notifications enabled (if allowed).");
     };
 
-    // === Init ===
+    // === Init: render, sw, reminders ===
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
     events.forEach(scheduleReminder);
     renderCalendar();
