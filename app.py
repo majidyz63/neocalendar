@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
 import traceback
 
 app = Flask(__name__)
+CORS(app)
 
 # === Load Google Service Account ===
 SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "service_account.json")
@@ -21,6 +23,10 @@ def get_calendar_service():
         print("❌ Failed to load service account:", e)
         traceback.print_exc()
         raise
+
+@app.route("/")
+def home():
+    return "✅ NeoCalendar Backend is running"
 
 # === API: Add Event ===
 @app.route("/api/add_event", methods=["POST"])
@@ -66,11 +72,6 @@ def delete_event(event_id):
         print("🔥 Error in /api/delete_event:", e)
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
-# === Root ===
-@app.route("/")
-def home():
-    return "✅ NeoCalendar Backend is running"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
