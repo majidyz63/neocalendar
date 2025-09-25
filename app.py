@@ -9,13 +9,15 @@ app = Flask(__name__)
 CORS(app)
 
 # === Load Google Service Account ===
-SERVICE_ACCOUNT_FILE = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "service_account.json")
+import json
+
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 def get_calendar_service():
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE, scopes=SCOPES
+        service_account_info = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+        creds = service_account.Credentials.from_service_account_info(
+            service_account_info, scopes=SCOPES
         )
         service = build("calendar", "v3", credentials=creds)
         return service
