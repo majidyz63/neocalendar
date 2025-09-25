@@ -1,42 +1,50 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 app = Flask(__name__)
+CORS(app)  # اجازه میده فرانت (Vercel) بتونه API رو صدا بزنه
 
-# فایل JSON کلید سرویس
+# 🔑 بارگذاری Service Account از فایل JSON
+# بهتره اسم فایل رو به جای هاردکد، با ENV بخونی
 SERVICE_ACCOUNT_FILE = "service_lucky_471512.json"
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-# اعتبارنامه
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+creds = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE,
+    scopes=["https://www.googleapis.com/auth/calendar"]
 )
-service = build("calendar", "v3", credentials=credentials)
 
+
+# 📌 Route: افزودن ایونت
 @app.route("/api/add_event", methods=["POST"])
 def add_event():
     data = request.json
-    event = {
-        "summary": data["title"],
-        "start": {"dateTime": data["start"], "timeZone": "Europe/Brussels"},
-        "end": {"dateTime": data["end"], "timeZone": "Europe/Brussels"},
-    }
-    event = service.events().insert(calendarId="primary", body=event).execute()
-    return jsonify({"id": event["id"], "status": "created"})
+    title = data.get("title")
+    start = data.get("start")
+    end = data.get("end")
 
-@app.route("/api/list_events", methods=["GET"])
-def list_events():
-    events_result = service.events().list(
-        calendarId="primary", maxResults=10, singleEvents=True,
-        orderBy="startTime"
-    ).execute()
-    events = events_result.get("items", [])
-    return jsonify(events)
+    if not title or not start or not end:
+        return jsonify({"error": "Missing required fields"}), 400
 
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        event = {
+            "summary": title,
+            "start": {"dateTime": start, "timeZone": "UTC"},
+            "end": {"dateTime": end, "timeZone": "UTC"},
+        }
+        created_event = service.events().insert(calendarId="primary", body=event).execute()
+        return jsonify({"id": created_event["id"], "status": "created"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# 📌 Route: حذف ایونت
 @app.route("/api/delete_event/<event_id>", methods=["DELETE"])
 def delete_event(event_id):
     try:
+        service = build("calendar", "v3", credentials=creds)
         service.events().delete(calendarId="primary", eventId=event_id).execute()
         return jsonify({"status": "deleted"})
     except Exception as e:
