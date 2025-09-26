@@ -336,9 +336,11 @@ document.addEventListener("DOMContentLoaded", () => {
             formData.append("file", audioBlob, "quick_recording.webm");
             formData.append("lang", lang);
 
-            // 🔹 به Extractor می‌فرسته
-            const resp = await fetch(`${EXTRACTOR_BASE}/api/voice_event`, { method: "POST", body: formData });
+            // 🔹 به Extractor می‌فرسته (اصلاح شده: EXTRACT_BASE)
+            const resp = await fetch(`${EXTRACT_BASE}/api/voice_event`, { method: "POST", body: formData });
             const data = await resp.json();
+
+            console.log("🎤 Extractor response:", data);
 
             if (!resp.ok || !data.datetime) throw new Error("Invalid response");
             if (data.reminder === undefined || data.reminder === null) data.reminder = 0;
@@ -358,6 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
             quickBtn.classList.remove("recording");
         }
     }
+
 
     // === Navigation ===
     addEventBtn.onclick = addEvent;
