@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // === API Base URLs ===
     const EXTRACT_BASE = "https://shared-deborah-neoprojects-65e1dc36.koyeb.app"; // AI Extractor
-    const CAL_BASE = "https://neocal-backend-612704855594.europe-west1.run.app"; // NeoCalendar Backend (Cloud Run)
+    const CAL_BASE = "https://neocal-backend-612704855594.europe-west1.run.app";  // NeoCalendar Backend (Cloud Run)
 
     const calendarEl = document.getElementById('calendar');
     const monthYearEl = document.getElementById('monthYear');
@@ -21,44 +21,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // === Storage ===
-    function saveEvents() {
+    async function saveEvents() {
         localStorage.setItem('events', JSON.stringify(events));
-    }
 
-    // === Google Calendar: Export/Save/Delete via API ===
-    async function saveEventToGoogle(ev) {
-        const startDate = new Date(ev.datetime);
-        const endDate = new Date(startDate.getTime() + 60 * 60000);
-        const body = {
-            title: ev.title,
-            start: startDate.toISOString(),
-            end: endDate.toISOString()
-        };
+        // 🔄 ارسال رویداد جدید به بک‌اند
         try {
-            const resp = await fetch(`${CAL_BASE}/api/add_event`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
-            if (!resp.ok) throw new Error(await resp.text());
-            const data = await resp.json();
-            ev.gcalId = data.id;
-            saveEvents();
-            alert("✅ Event saved to Google Calendar!");
+            let latestEvent = events[events.length - 1];
+            if (latestEvent) {
+                await fetch(`${CAL_BASE}/api/add_event`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: latestEvent.title,
+                        start: latestEvent.start,
+                        end: latestEvent.end,
+                        location: latestEvent.location || "",
+                        description: latestEvent.description || ""
+                    })
+                });
+            }
         } catch (err) {
-            console.error("❌ Save error:", err);
-            alert("❌ Failed to save event to Google Calendar.");
+            console.error("❌ Backend add_event error:", err);
         }
     }
 
-    async function deleteEventFromGoogle(ev) {
-        if (!ev.gcalId) return;
+    async function deleteEvent(index) {
+        const removed = events[index];
+        events.splice(index, 1);
+        localStorage.setItem('events', JSON.stringify(events));
+
+        // 🔄 حذف از بک‌اند
         try {
-            const resp = await fetch(`${CAL_BASE}/api/delete_event/${ev.gcalId}`, { method: "DELETE" });
-            if (resp.ok) ev.gcalId = null;
+            if (removed && removed.id) {
+                await fetch(`${CAL_BASE}/api/delete_event`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ event_id: removed.id })
+                });
+            }
         } catch (err) {
-            console.error("❌ Delete error:", err);
+            console.error("❌ Backend delete_event error:", err);
         }
+
+        renderEvents();
+        renderCalendar();
     }
 
     // === Reminders ===
